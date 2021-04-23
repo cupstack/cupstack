@@ -1,0 +1,53 @@
+#!/bin/bash
+
+cupstack_install_compiler() {
+  if [ "$#" -ne 3 ]; then
+    echo "Function requires:"
+    echo "1. Install Prefix"
+    echo "2. Temporary Directory"
+    echo "3. Parallel Number of Jobs"
+    return 1
+  fi
+
+  INSTALL_PREFIX=$1
+  TEMPORARY_DIRECTORY=$2
+  PARALLEL_JOBS=$3
+
+  SOURCE_URL=https://github.com/llvm/llvm-project.git
+  SOURCE_VERSION="llvmorg-11.0.1"
+  BINUTILS_INCDIR=/usr/include
+  PROJECT_LIST="clang;clang-tools-extra;libcxx;libcxxabi;libunwind;compiler-rt;lld;openmp"
+
+  BUILD_DIRECTORY=$TEMPORARY_DIRECTORY/build
+  SOURCE_DIRECTORY=$TEMPORARY_DIRECTORY/src
+
+  mkdir -p $TEMPORARY_DIRECTORY
+  mkdir -p $BUILD_DIRECTORY
+
+  git clone --depth 1 -b $SOURCE_VERSION $SOURCE_URL $SOURCE_DIRECTORY
+
+  cmake \
+    -B$BUILD_DIRECTORY -S$SOURCE_DIRECTORY/llvm \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_COMPILER=clang \
+    -DCLANG_DEFAULT_CXX_STDLIB=libc++ \
+    -DCLANG_DEFAULT_RTLIB=compiler-rt \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CXX_FLAGS=" -w -static-libgcc -static-libstdc++" \
+    -DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++" \
+    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DLIBCXX_USE_COMPILER_RT=YES \
+    -DLIBCXXABI_USE_LLVM_UNWINDER=YES \
+    -DLIBCXXABI_USE_COMPILER_RT=YES \
+    -DLLVM_BINUTILS_INCDIR=$BINUTILS_INCDIR \
+    -DLLVM_ENABLE_BINDINGS=OFF \
+    -DLLVM_ENABLE_LLD=ON \
+    -DLLVM_ENABLE_PROJECTS=$PROJECT_LIST
+
+  cmake --build $BUILD_DIRECTORY --parallel $PARALLEL_JOBS
+
+  cmake --install $BUILD_DIRECTORY
+}

@@ -1,0 +1,10 @@
+.base:
+  tags: ["docker"]
+  script:
+    - ./src/bin/cupstack $CI_JOB_NAME /opt/cupstack/$CI_JOB_NAME /var/tmp/cupstack/$CI_JOB_NAME 3
+
+clang.11.0.1:
+  extends: .base
+
+nvhpc.21.2:
+  extends: .base

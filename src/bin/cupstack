@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+# resolve $SOURCE until the file is no longer a symlink
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the
+  # path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIRECTORY="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+if [ "$#" -ne 4 ]; then
+  echo "Script requires:"
+  echo "1. Compiler Name"
+  echo "2. Install Prefix"
+  echo "3. Temporary Directory"
+  echo "4. Parallel Jobs"
+  exit 1
+fi
+
+COMPILER_NAME=$1
+INSTALL_PREFIX=$2
+TEMPORARY_DIRECTORY=$3
+PARALLEL_JOBS=$4
+
+source $SCRIPT_DIRECTORY/../lib/compiler/$COMPILER_NAME/install
+
+cupstack_install_compiler $INSTALL_PREFIX $TEMPORARY_DIRECTORY $PARALLEL_JOBS
